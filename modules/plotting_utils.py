@@ -48,7 +48,8 @@ def plot_solution(pinn: PINN, x: torch.Tensor, t: torch.Tensor, figsize=(8, 6), 
     n_frames = t_raw.shape[0]
     return FuncAnimation(fig, animate, frames=n_frames, interval=100, repeat=False)
 
-def plot_color(z: torch.Tensor, x: torch.Tensor, y: torch.Tensor, n_points_x, n_points_t, title, figsize=(8, 6), dpi=100, cmap="viridis"):
+def plot_color(z: torch.Tensor, x: torch.Tensor, y: torch.Tensor, n_points_x, n_points_t, 
+               title, figsize=(8, 6), dpi=100, cmap="viridis"):
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     z_raw = z.detach().cpu().numpy()
     x_raw = x.detach().cpu().numpy()
@@ -64,7 +65,8 @@ def plot_color(z: torch.Tensor, x: torch.Tensor, y: torch.Tensor, n_points_x, n_
 
     return fig
 
-def plot_3D(z: torch.Tensor, x: torch.Tensor, y: torch.Tensor, n_points_x, n_points_t, title, figsize=(8, 6), dpi=100, limit=0.2):
+def plot_3D(z: torch.Tensor, x: torch.Tensor, y: torch.Tensor, n_points_x, n_points_t, 
+            title, figsize=(8, 6), dpi=100, limit=0.2):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(projection='3d')
     z_raw = z.detach().cpu().numpy()

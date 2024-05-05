@@ -32,11 +32,9 @@ def running_average(y, window=100):
 # Initial condition
 def initial_condition(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     r = torch.sqrt((x-LENGTH/2)**2 + (y-LENGTH/2)**2)
-    res = (r - 0.25) * (r < 0.25)
-    # res = (torch.sqrt((x-0.5)**2 + (y-0.5)**2) - 0.25)**2 * # (torch.sqrt((x-0.5)
     res = 2 * torch.exp(-(r)**2 * 30) + 2
     return res
 
-def floor(x, y):
-    """Get the sea floor value"""
-    return 0
+# def floor(x, y):
+#     """Get the sea floor value"""
+#     return 0

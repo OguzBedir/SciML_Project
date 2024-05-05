@@ -25,7 +25,7 @@ with open(yaml_file_path, "r") as file:
     yaml_data = yaml.safe_load(file)
 
 # Now you can access elements from the loaded YAML data
-GRAVITY = yaml_data["GRAVITY"]
+c = yaml_data["VELOCITY"]
 # >>> END <<<
 
 class Loss:
@@ -36,32 +36,30 @@ class Loss:
         t_domain: Tuple[float, float],
         n_points: int,
         initial_condition: Callable,
-        floor: Callable,
+        # floor: Callable,
         weight_r: float = 1.0,
         weight_b: float = 1.0,
         weight_i: float = 1.0,
-        verbose: bool = False,
+        # verbose: bool = False,
     ):
         self.x_domain = x_domain
         self.y_domain = y_domain
         self.t_domain = t_domain
         self.n_points = n_points
         self.initial_condition = initial_condition
-        self.floor = floor
+        # self.floor = floor
         self.weight_r = weight_r
         self.weight_b = weight_b
         self.weight_i = weight_i
 
     def residual_loss(self, pinn: PINN):
         x, y, t = get_interior_points(self.x_domain, self.y_domain, self.t_domain, self.n_points, pinn.device())
-        u = f(pinn, x, y, t)
-        z = self.floor(x, y)
         loss = dfdt(pinn, x, y, t, order=2) - \
-                      GRAVITY * ( dfdx(pinn, x, y, t) ** 2 + \
-                      (u-z) * dfdx(pinn, x, y, t, order=2) + \
-                      dfdy(pinn, x, y, t) ** 2 + \
-                      (u-z) * dfdy(pinn, x, y, t, order=2)
-                      )
+                c**2 *  (
+                    dfdx(pinn, x, y, t, order=2) + 
+                    dfdy(pinn, x, y, t, order=2)
+                )
+
         return loss.pow(2).mean()
 
     def initial_loss(self, pinn: PINN):
@@ -71,7 +69,8 @@ class Loss:
         return loss.pow(2).mean()
 
     def boundary_loss(self, pinn: PINN):
-        down, up, left, right = get_boundary_points(self.x_domain, self.y_domain, self.t_domain, self.n_points, pinn.device())
+        down, up, left, right = get_boundary_points(self.x_domain, self.y_domain, self.t_domain, self.n_points, 
+                                                    pinn.device())
         x_down,  y_down,  t_down    = down
         x_up,    y_up,    t_up      = up
         x_left,  y_left,  t_left    = left
