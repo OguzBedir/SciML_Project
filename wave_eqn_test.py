@@ -6,9 +6,9 @@ from wave_eqn.wave_eqn import WaveEqn2D
 wave_eqn = WaveEqn2D()
 wave_eqn.place_single_drop()
 
-TIME_TO_VISUALIZE = 0.1
+TIME_TO_VISUALIZE = 0
 LENGTH = 2.0
-N_POINTS = 30
+N_POINTS = 15
 
 # Simulate until the desired time
 while wave_eqn.t < TIME_TO_VISUALIZE:

@@ -30,6 +30,7 @@ def initial_condition(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     r = torch.sqrt((x-LENGTH/2)**2 + (y-LENGTH/2)**2)
     res = 2 * torch.exp(-(r)**2 * 30) + 2
     # res = 2 * torch.exp(-(r)**2 * 30)
+    # res = torch.exp(-(x-1).pow(2) - (y-1).pow(2))
     return res
 
 # def floor(x, y):

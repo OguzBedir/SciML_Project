@@ -58,7 +58,7 @@ def train_model(
             initial_loss_values.append(loss[2].item())
             boundary_loss_values.append(loss[3].item())
 
-            if plot_solution and (epoch + 1) % 5000 == 0:
+            if plot_solution and (epoch + 1) % 10_000 == 0:
                 # TODO: 
                 # - ADD AN IF STATEMENT FOR SELECTING 2D OR 3D PLOTTING OPTION
                 # - CHANGE STATIC 500 TO SOMETHING THAT CAN BE PASSED AS AN ARGUMENT

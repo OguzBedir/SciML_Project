@@ -32,8 +32,8 @@ n_points = N_POINTS
 
 class WaveEqn2D:
     def __init__(self, nx: int = n_points, ny: int = n_points, 
-                 c: float = VELOCITY, h: float = 1e-3, dt: float = 1e-3,
-                 damping_coeff: float = 1.0):
+                 c: float = VELOCITY, h: float = 1e-3, # dt: float = 1e-3,
+                 damping_coeff: float = 0.5):
         """Initialize the simulation:
 
         nx and ny are the dimensions of the domain;
@@ -43,9 +43,12 @@ class WaveEqn2D:
 
         self.nx, self.ny = nx, ny
         self.c = c
-        self.h, self.dt = h, dt
+        self.h = h
+        self.dt = 0.5*h/c # Choose a time step to satisfy the CFL condition
+                            # Information can't travel further than dx during a time dt
+                            # or the system will be numerically unstable
         self.alpha = np.zeros((nx, ny)) # Wave propagation velocities of the entire simulation domain
-        self.alpha[0:nx, 0:ny] = ((c * dt) / h)**2
+        self.alpha[0:nx, 0:ny] = ((c * self.dt) / h)**2
 
         self.u = np.zeros((3, ny, nx))
         self.t = 0 # Initialize the current time
@@ -64,8 +67,8 @@ class WaveEqn2D:
         # k+1, k and k-1; i.e. we calculate the next frame
         # of the simulation (k+1) in u[0,...].
         u, nx, ny = self.u, self.nx, self.ny
-        u[2] = u[1]     # old k -> new k-1
-        u[1] = u[0]     # old k+1 -> new k
+        u[2] = u[1] # old k -> new k-1
+        u[1] = u[0] # old k+1 -> new k
 
         # Calculate the new k+1 at the specified point (ix, iy)
         # Version 2: Much faster by eliminating loops
@@ -77,17 +80,20 @@ class WaveEqn2D:
                                 + 2 * u[1, 1:nx-1, 1:ny-1] - u[2, 1:nx-1, 1:ny-1]
         
         # Calculate damping coefficient based on current amplitude
-        damping_factor = np.exp(-self.damping_coeff * self.dt * self.t)
+        max_amplitude = np.max(np.abs(u[0]))
+        damping_factor = np.exp(-self.damping_coeff * max_amplitude * self.dt)
         # Clip damping factor to be within range [0, 1]
         damping_factor = np.clip(damping_factor, 0, 1)
         # Apply damping
         u[0] *= damping_factor
 
-        # Apply zero boundary conditions
-        u[0, 0, :] = 0  # bottom boundary
-        u[0, -1, :] = 0  # top boundary
-        u[0, :, 0] = 0  # left boundary
-        u[0, :, -1] = 0  # right boundary
+        # Apply Neumann boundary conditions
+        # Derivative along x-axis at left and right boundaries
+        u[0, :, 0] = u[0, :, 1]  # Neumann boundary condition at left boundary
+        u[0, :, -1] = u[0, :, -2]  # Neumann boundary condition at right boundary
+        # Derivative along y-axis at top and bottom boundaries
+        u[0, 0, :] = u[0, 1, :]  # Neumann boundary condition at bottom boundary
+        u[0, -1, :] = u[0, -2, :]  # Neumann boundary condition at top boundary
 
         # Update time
         self.t += self.dt
