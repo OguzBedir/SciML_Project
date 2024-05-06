@@ -1,12 +1,12 @@
 LENGTH: 2.0  # Domain size in x axis. Always starts at 0
 TOTAL_TIME: 0.5  # Domain size in t axis. Always starts at 0
 N_POINTS: 15  # Number of points in a single axis
-N_POINTS_PLOT: 150  # Number of points in a single axis used in plotting
-WEIGHT_RESIDUAL: 1.0 # 0.03  # Weight of residual part of loss function
-WEIGHT_INITIAL: 1.0  # Weight of initial part of loss function
-WEIGHT_BOUNDARY: 1.0 # 0.0005  # Weight of boundary part of loss function
+N_POINTS_PLOT: 1000  # Number of points in a single axis used in plotting
+WEIGHT_RESIDUAL: 3.0e-2  # Weight of residual part of loss function
+WEIGHT_INITIAL: 1.0 # Weight of initial part of loss function
+WEIGHT_BOUNDARY: 5.0e-4  # Weight of boundary part of loss function
 LAYERS: 4
 NEURONS_PER_LAYER: 128
-EPOCHS: 2_000
-LEARNING_RATE: 1.0e-4 # 0.00015
-VELOCITY: 0.5 #  Wave velocity in m/s
+EPOCHS: 50_000
+LEARNING_RATE: 0.00015
+VELOCITY: 1 #  Wave velocity in m/s

@@ -55,7 +55,7 @@ class Loss:
     def residual_loss(self, pinn: PINN):
         x, y, t = get_interior_points(self.x_domain, self.y_domain, self.t_domain, self.n_points, pinn.device())
         loss = dfdt(pinn, x, y, t, order=2) - \
-                c**2 *  (
+                c**2 * (
                     dfdx(pinn, x, y, t, order=2) + 
                     dfdy(pinn, x, y, t, order=2)
                 )
