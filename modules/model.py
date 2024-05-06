@@ -8,7 +8,6 @@ class PINN(nn.Module):
     to approximate the solution of the differential equation
     """
     def __init__(self, num_hidden: int, dim_hidden: int, act=nn.Tanh()):
-
         super().__init__()
 
         self.layer_in = nn.Linear(3, dim_hidden)
@@ -21,7 +20,6 @@ class PINN(nn.Module):
         self.act = act
 
     def forward(self, x, y, t):
-
         x_stack = torch.cat([x, y, t], dim=1)
         out = self.act(self.layer_in(x_stack))
         for layer in self.middle_layers:

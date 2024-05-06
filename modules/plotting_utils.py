@@ -1,94 +1,108 @@
+import os
 import torch
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.animation import FuncAnimation
 from modules.model import PINN
 from modules.pinn_utils import f
 
-# >>> START <<<
-"""
-Quick and dirty solution.
-Can be refactored in the future.
-"""
-import os
-import yaml
-# Get the current directory
-current_dir = os.path.dirname(__file__)
+def plot_2D(pinn: PINN, x_domain: list, y_domain: list, t: int, device: str,
+            num_points: int = 100, figsize=(8, 6), cmap='viridis', 
+            fname: str='2D_solution_plot.png'):
+    """
+        Plot the solution of the PINN in 2D.
 
-# Navigate to the parent directory
-parent_dir = os.path.dirname(current_dir)
+        Args:
+            pinn (PINN): The physics-informed neural network model.
+            x_domain (list): List containing the spatial domain along the x-axis [xmin, xmax].
+            y_domain (list): List containing the spatial domain along the y-axis [ymin, ymax].
+            t (int): Time coordinate.
+            num_points (int): Number of points along each axis for plotting (default is 100).
+            figsize (tuple): Size of the figure (default is (8, 6)).
+            cmap (str): Colormap for the plot (default is 'viridis').
+            fname (str): File name for saving the plot (default is '2D_solution_plot.png').
+            device (str): Device to use for computation.
+    """
+    # Generate meshgrid for 2D plotting
+    x_grid, y_grid = torch.meshgrid(torch.linspace(x_domain[0], x_domain[1], num_points),
+                                     torch.linspace(y_domain[0], y_domain[1], num_points))
+    t_grid = torch.ones_like(x_grid) * t  # Plot for given time t
 
-# Specify the path to your YAML file in the parent directory
-yaml_file_path = os.path.join(parent_dir, "config.yaml")
+    # Concatenate spatial coordinates and time
+    xyt = torch.stack([x_grid.flatten(), y_grid.flatten(), t_grid.flatten()], dim=1).to(device)
 
-# Open the YAML file and load its contents
-with open(yaml_file_path, "r") as file:
-    yaml_data = yaml.safe_load(file)
+    # Compute solution using PINN model
+    with torch.no_grad():
+        solution = f(pinn, 
+                     xyt[:, 0].reshape(-1, 1), 
+                     xyt[:, 1].reshape(-1, 1), 
+                     xyt[:, 2].reshape(-1, 1)).reshape(num_points, num_points)
 
-# Now you can access elements from the loaded YAML data
-LENGTH = yaml_data["LENGTH"]
-# >>> END <<<
+    # Plot solution
+    plt.figure(figsize=figsize)
+    plt.imshow(solution.detach().cpu().numpy(), 
+               extent=(x_domain[0], x_domain[1],
+                        y_domain[0], y_domain[1]), cmap=cmap, origin='lower')
+    plt.colorbar(label='Solution')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.title(f"PINN Approximation at time t={t}")
+    plt.grid(False)
 
-def plot_solution(pinn: PINN, x: torch.Tensor, t: torch.Tensor, figsize=(8, 6), dpi=100):
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    x_raw = torch.unique(x).reshape(-1, 1)
-    t_raw = torch.unique(t)
+    # Define the directory path for saving the figure
+    save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'img')
+    # Ensure the directory exists, create it if it doesn't
+    os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(os.path.join(save_dir, fname))
+    plt.close()
 
-    def animate(i):
-        if not i % 10 == 0:
-            t_partial = torch.ones_like(x_raw) * t_raw[i]
-            f_final = f(pinn, x_raw, t_partial)
-            ax.clear()
-            ax.plot(
-                x_raw.detach().numpy(), f_final.detach().numpy(), label=f"Time {float(t[i])}"
-            )
-            ax.set_ylim(-1, 1)
-            ax.legend()
 
-    n_frames = t_raw.shape[0]
-    return FuncAnimation(fig, animate, frames=n_frames, interval=100, repeat=False)
+def plot_3D(pinn: PINN, x_domain: list, y_domain: list, t: int, device: str,
+            num_points: int = 100, figsize=(8, 6), cmap='viridis', 
+            fname: str='3D_solution_plot.png'):
+    """
+    Plot the solution of the PINN in 3D.
 
-def plot_color(z: torch.Tensor, x: torch.Tensor, y: torch.Tensor, n_points_x, n_points_t, title, figsize=(8, 6), dpi=100, cmap="viridis"):
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    z_raw = z.detach().cpu().numpy()
-    x_raw = x.detach().cpu().numpy()
-    y_raw = y.detach().cpu().numpy()
-    X = x_raw.reshape(n_points_x, n_points_t)
-    Y = y_raw.reshape(n_points_x, n_points_t)
-    Z = z_raw.reshape(n_points_x, n_points_t)
-    ax.set_title(title)
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    c = ax.pcolormesh(X, Y, Z, cmap=cmap)
-    fig.colorbar(c, ax=ax)
+    Args:
+        pinn (PINN): The physics-informed neural network model.
+        x_domain (list): List containing the spatial domain along the x-axis [xmin, xmax].
+        y_domain (list): List containing the spatial domain along the y-axis [ymin, ymax].
+        t (int): Time coordinate.
+        num_points (int): Number of points along each axis for plotting (default is 100).
+        figsize (tuple): Size of the figure (default is (8, 6)).
+        cmap (str): Colormap for the plot (default is 'viridis').
+        fname (str): File name for saving the plot (default is '3D_solution_plot.png').
+        device (str): Device to use for computation (default is 'cuda').
+    """
+    # Generate meshgrid for 3D plotting
+    x_grid = torch.linspace(x_domain[0], x_domain[1], num_points)
+    y_grid = torch.linspace(y_domain[0], y_domain[1], num_points)
+    X, Y = torch.meshgrid(x_grid, y_grid)
+    t_grid = torch.full_like(X, t)
 
-    return fig
+    # Concatenate spatial coordinates and time
+    xy = torch.stack([X.flatten(), Y.flatten(), t_grid.flatten()], dim=1).to(device)
 
-def plot_3D(z: torch.Tensor, x: torch.Tensor, y: torch.Tensor, n_points_x, n_points_t, title, figsize=(8, 6), dpi=100, limit=0.2):
+    # Compute solution using PINN model
+    with torch.no_grad():
+        solution = f(pinn, 
+                     xy[:, 0].reshape(-1, 1), 
+                     xy[:, 1].reshape(-1, 1), 
+                     xy[:, 2].reshape(-1, 1)).reshape(num_points, num_points)
+
+    # Plot solution
     fig = plt.figure(figsize=figsize)
-    ax = fig.add_subplot(projection='3d')
-    z_raw = z.detach().cpu().numpy()
-    x_raw = x.detach().cpu().numpy()
-    y_raw = y.detach().cpu().numpy()
-    X = x_raw.reshape(n_points_x, n_points_t)
-    Y = y_raw.reshape(n_points_x, n_points_t)
-    Z = z_raw.reshape(n_points_x, n_points_t)
-    ax.set_title(title)
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.axes.set_zlim3d(bottom=-limit, top=limit)
-
-    c = ax.plot_surface(X, Y, Z)
-
-    x_floor = torch.linspace(0.0, LENGTH, 50)
-    y_floor = torch.linspace(0.0, LENGTH, 50)
-    z_floor = torch.zeros((50, 50))
-    for x_idx, x_coord in enumerate(x_floor):
-        for y_idx, y_coord in enumerate(y_floor):
-            # z_floor[x_idx, y_idx] = floor(x_coord, y_coord)
-            z_floor[x_idx, y_idx] = 0
-    x_floor = torch.tile(x_floor, (50, 1))
-    y_floor = torch.tile(y_floor, (50, 1)).T
-    f = ax.plot_surface(x_floor, y_floor, z_floor, color='green', alpha=0.7)
-
-    return fig
+    ax = fig.add_subplot(111, projection='3d')
+    X, Y = torch.meshgrid(x_grid, y_grid)
+    surf = ax.plot_surface(X.detach().cpu().numpy(), Y.detach().cpu().numpy(), 
+                           solution.detach().cpu().numpy(), cmap=cmap)
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title(f'PINN approximation at time t={t}')
+    
+    # Save the plot
+    save_dir = os.path.join(os.path.dirname(__file__), '..', 'img')
+    os.makedirs(save_dir, exist_ok=True)
+    plt.savefig(os.path.join(save_dir, fname))
+    plt.close()
