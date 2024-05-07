@@ -32,7 +32,7 @@ n_points = N_POINTS
 
 class WaveEqn2D:
     def __init__(self, nx: int = n_points, ny: int = n_points, 
-                 c: float = VELOCITY, h: float = 1e-3, # dt: float = 1e-3,
+                 c: float = VELOCITY, h: float = LENGTH/n_points, # dt: float = TOTAL_TIME/n_points,
                  damping_coeff: float = 0.5):
         """Initialize the simulation:
 
@@ -44,9 +44,9 @@ class WaveEqn2D:
         self.nx, self.ny = nx, ny
         self.c = c
         self.h = h
-        self.dt = 0.5*h/c # Choose a time step to satisfy the CFL condition
-                            # Information can't travel further than dx during a time dt
-                            # or the system will be numerically unstable
+        self.dt = 0.8*h/c # Choose a time step to satisfy the CFL condition
+                          # Information can't travel further than dx during a time dt
+                          # or the system will be numerically unstable
         self.alpha = np.zeros((nx, ny)) # Wave propagation velocities of the entire simulation domain
         self.alpha[0:nx, 0:ny] = ((c * self.dt) / h)**2
 
@@ -80,12 +80,12 @@ class WaveEqn2D:
                                 + 2 * u[1, 1:nx-1, 1:ny-1] - u[2, 1:nx-1, 1:ny-1]
         
         # Calculate damping coefficient based on current amplitude
-        # max_amplitude = np.max(np.abs(u[0]))
-        # damping_factor = np.exp(-self.damping_coeff * max_amplitude * self.dt)
+        max_amplitude = np.max(np.abs(u[0]))
+        damping_factor = np.exp(-self.damping_coeff * max_amplitude * self.dt)
         # Clip damping factor to be within range [0, 1]
-        # damping_factor = np.clip(damping_factor, 0, 1)
+        damping_factor = np.clip(damping_factor, 0, 1)
         # Apply damping
-        # u[0] *= 0.995 # damping_factor
+        u[0] *= damping_factor
 
         # Apply Neumann boundary conditions
         # Derivative along x-axis at left and right boundaries
