@@ -1,29 +1,26 @@
+import torch
+import numpy as np
 from typing import Tuple, Callable
 from modules.model import PINN
-from modules.domain_utils import get_interior_points, get_initial_points, get_boundary_points
+from modules.domain_utils import get_interior_points, get_initial_points, get_boundary_points, get_data_points
 from modules.pinn_utils import f, dfdt, dfdx, dfdy
 
 # >>> START <<<
 """
 Quick and dirty solution.
 SHOULD be refactored in the future.
-In your PDE you do NOT need GRAVITY.
 """
 import os
 import yaml
 # Get the current directory
 current_dir = os.path.dirname(__file__)
-
 # Navigate to the parent directory
 parent_dir = os.path.dirname(current_dir)
-
 # Specify the path to your YAML file in the parent directory
 yaml_file_path = os.path.join(parent_dir, "config.yaml")
-
 # Open the YAML file and load its contents
 with open(yaml_file_path, "r") as file:
     yaml_data = yaml.safe_load(file)
-
 # Now you can access elements from the loaded YAML data
 c = yaml_data["VELOCITY"]
 # >>> END <<<
@@ -39,7 +36,7 @@ class Loss:
         # floor: Callable,
         weight_r: float = 1.0,
         weight_b: float = 1.0,
-        weight_i: float = 1.0,
+        weight_i: float = 1.0
         # verbose: bool = False,
     ):
         self.x_domain = x_domain
@@ -51,11 +48,19 @@ class Loss:
         self.weight_r = weight_r
         self.weight_b = weight_b
         self.weight_i = weight_i
+        self.data = torch.from_numpy(np.load("data.npy"))
 
-    def residual_loss(self, pinn: PINN):
-        x, y, t = get_interior_points(self.x_domain, self.y_domain, self.t_domain, self.n_points, pinn.device())
+    def data_loss(self,pinn):
+        x, y, t = get_data_points(self.x_domain, self.y_domain, self.t_domain, self.n_points, pinn.device())
+        preds = f(pinn, x, y, t)
+        loss =(torch.flatten(self.data.to(pinn.device())) - preds)
+        return loss.pow(2).mean()
+
+    def residual_loss(self, pinn: PINN, mode: str):
+        x, y, t = get_interior_points(self.x_domain, self.y_domain, self.t_domain, self.n_points + 5,
+                                      mode=mode, device=pinn.device())
         loss = dfdt(pinn, x, y, t, order=2) - \
-                c**2 *  (
+                c**2 * (
                     dfdx(pinn, x, y, t, order=2) + 
                     dfdy(pinn, x, y, t, order=2)
                 )
@@ -63,7 +68,7 @@ class Loss:
         return loss.pow(2).mean()
 
     def initial_loss(self, pinn: PINN):
-        x, y, t = get_initial_points(self.x_domain, self.y_domain, self.t_domain, self.n_points, pinn.device())
+        x, y, t = get_initial_points(self.x_domain, self.y_domain, self.t_domain, self.n_points//4, pinn.device())
         pinn_init = self.initial_condition(x, y)
         loss = f(pinn, x, y, t) - pinn_init
         return loss.pow(2).mean()
@@ -86,29 +91,24 @@ class Loss:
             loss_left.pow(2).mean()  + \
             loss_right.pow(2).mean()
 
-    def verbose(self, pinn: PINN, only_initial=False):
+    def verbose(self, pinn: PINN, mode: str):
         """
         Returns all parts of the loss function
-        Not used during training! Only for checking the results later.
         """
-        residual_loss = self.residual_loss(pinn)
+        residual_loss = self.residual_loss(pinn, mode)
         initial_loss = self.initial_loss(pinn)
         boundary_loss = self.boundary_loss(pinn)
+        data_loss = self.data_loss(pinn)
 
         final_loss = \
             self.weight_r * residual_loss + \
             self.weight_i * initial_loss + \
-            self.weight_b * boundary_loss
+            self.weight_b * boundary_loss + \
+            data_loss
 
-        if only_initial:
-          final_loss = \
-            self.weight_r * residual_loss + \
-            self.weight_i * initial_loss + \
-            self.weight_b * boundary_loss
+        return final_loss, residual_loss, initial_loss, boundary_loss, data_loss
 
-        return final_loss, residual_loss, initial_loss, boundary_loss
-
-    def __call__(self, pinn: PINN, only_initial=False):
+    def __call__(self, pinn: PINN, mode: str = 'mid'):
         """
         Allows you to use instance of this class as if it was a function:
         ```
@@ -116,4 +116,4 @@ class Loss:
             >>> calculated_loss = loss(pinn)
         ```
         """
-        return self.verbose(pinn, only_initial)
+        return self.verbose(pinn, mode)

@@ -5,7 +5,6 @@ from typing import Callable
 from modules.model import PINN
 from modules.plotting_utils import plot_2D, plot_3D
 
-
 # >>> START <<<
 """
 Quick and dirty solution.
@@ -44,12 +43,20 @@ def train_model(
     residual_loss_values = []
     initial_loss_values = []
     boundary_loss_values = []
+    data_loss_values = []
 
     start_time = time.time()
 
     for epoch in range(max_epochs):
         try:
-            loss: torch.Tensor = loss_fn(nn_approximator)
+            if epoch < 20_000:
+                mode = 'init'
+            elif (epoch >= 20_000) and (epoch < 50_000):
+                mode = 'mid'
+            else:
+                mode = 'end'
+
+            loss: torch.Tensor = loss_fn(nn_approximator, mode)
             optimizer.zero_grad()
             loss[0].backward()
             optimizer.step()
@@ -58,8 +65,9 @@ def train_model(
             residual_loss_values.append(loss[1].item())
             initial_loss_values.append(loss[2].item())
             boundary_loss_values.append(loss[3].item())
+            data_loss_values.append(loss[4].item())
 
-            if plot_solution and (epoch + 1) % 500 == 0:
+            if plot_solution and (epoch + 1) % 5_000 == 0:
                 # TODO: 
                 # - ADD AN IF STATEMENT FOR SELECTING 2D OR 3D PLOTTING OPTION
                 # - CHANGE STATIC 500 TO SOMETHING THAT CAN BE PASSED AS AN ARGUMENT
@@ -67,12 +75,10 @@ def train_model(
                         fname=f"{epoch+1}, t={0}.png", device=compute_device)
                 plot_3D(nn_approximator, x_domain, y_domain, t=0.25,
                         fname=f"{epoch+1}, t={0.25}.png", device=compute_device)
-                plot_3D(nn_approximator, x_domain, y_domain, t=0.5,
-                        fname=f"{epoch+1}, t={0.5}.png", device=compute_device)
+                plot_3D(nn_approximator, x_domain, y_domain, t=0.75,
+                        fname=f"{epoch+1}, t={0.75}.png", device=compute_device)
 
-
-
-            if (epoch + 1) % 1000 == 0:
+            if (epoch + 1) % 1_000 == 0:
                 epoch_time = time.time() - start_time
                 start_time = time.time()
 
@@ -81,7 +87,12 @@ def train_model(
                     f"Residual Loss: {float(loss[1].item()):>7f}, "
                     f"Initial Loss: {float(loss[2].item()):>7f}, "
                     f"Boundary Loss: {float(loss[3].item()):>7f}, "
+                    f"Data Loss: {float(loss[4].item()):>7f}, "
                     f"Epoch Time: {epoch_time:.4f} seconds")
+                
+            if (epoch) % 1_000 == 0:
+                PATH = os.path.join(parent_dir, f"saved_models/{epoch}.pt")
+                torch.save(nn_approximator, PATH)
 
         except KeyboardInterrupt:
             break
@@ -91,5 +102,6 @@ def train_model(
         np.array(loss_values),
         np.array(residual_loss_values),
         np.array(initial_loss_values),
-        np.array(boundary_loss_values)
+        np.array(boundary_loss_values),
+        np.array(data_loss_values)
     )

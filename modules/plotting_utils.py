@@ -49,7 +49,7 @@ def plot_2D(pinn: PINN, x_domain: list, y_domain: list, t: int, device: str,
     plt.grid(False)
 
     # Define the directory path for saving the figure
-    save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'img')
+    save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'img/pinn_approx')
     # Ensure the directory exists, create it if it doesn't
     os.makedirs(save_dir, exist_ok=True)
     plt.savefig(os.path.join(save_dir, fname))
@@ -100,9 +100,54 @@ def plot_3D(pinn: PINN, x_domain: list, y_domain: list, t: int, device: str,
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     ax.set_title(f'PINN approximation at time t={t}')
+    ax.set_zlim(0, 1)
     
     # Save the plot
-    save_dir = os.path.join(os.path.dirname(__file__), '..', 'img')
+    save_dir = os.path.join(os.path.dirname(__file__), '..', 'img/pinn_approx')
     os.makedirs(save_dir, exist_ok=True)
     plt.savefig(os.path.join(save_dir, fname))
     plt.close()
+
+
+def plot_3D_subplot(pinn: PINN, x_domain: list, y_domain: list, t: int, device: str,
+                     num_points: int = 100, figsize=(8, 6), cmap='viridis'):
+    """
+    Plot the solution of the PINN in 3D.
+
+    Args:
+        pinn (PINN): The physics-informed neural network model.
+        x_domain (list): List containing the spatial domain along the x-axis [xmin, xmax].
+        y_domain (list): List containing the spatial domain along the y-axis [ymin, ymax].
+        t (int): Time coordinate.
+        num_points (int): Number of points along each axis for plotting (default is 100).
+        figsize (tuple): Size of the figure (default is (8, 6)).
+        cmap (str): Colormap for the plot (default is 'viridis').
+        fname (str): File name for saving the plot (default is '3D_solution_plot.png').
+        device (str): Device to use for computation (default is 'cuda').
+    """
+    # Generate meshgrid for 3D plotting
+    x_grid = torch.linspace(x_domain[0], x_domain[1], num_points)
+    y_grid = torch.linspace(y_domain[0], y_domain[1], num_points)
+    X, Y = torch.meshgrid(x_grid, y_grid)
+    t_grid = torch.full_like(X, t)
+
+    # Concatenate spatial coordinates and time
+    xy = torch.stack([X.flatten(), Y.flatten(), t_grid.flatten()], dim=1).to(device)
+
+    # Compute solution using PINN model
+    with torch.no_grad():
+        solution = f(pinn, 
+                     xy[:, 0].reshape(-1, 1), 
+                     xy[:, 1].reshape(-1, 1), 
+                     xy[:, 2].reshape(-1, 1)).reshape(num_points, num_points)
+
+    # Plot solution
+    # fig = plt.figure(figsize=figsize)
+    # ax = fig.add_subplot(111, projection='3d')
+    X, Y = torch.meshgrid(x_grid, y_grid)
+
+    return (
+        X.detach().cpu().numpy(), 
+        Y.detach().cpu().numpy(), 
+        solution.detach().cpu().numpy()
+    )
