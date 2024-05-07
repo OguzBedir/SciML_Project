@@ -79,6 +79,10 @@ def train_model(
                     f"Initial Loss: {float(loss[2].item()):>7f}, "
                     f"Boundary Loss: {float(loss[3].item()):>7f}, "
                     f"Epoch Time: {epoch_time:.4f} seconds")
+                
+            if (epoch) % 1_000 == 0:
+                PATH = os.path.join(parent_dir, f"saved_models/{epoch}.pt")
+                torch.save(nn_approximator, PATH)
 
         except KeyboardInterrupt:
             break

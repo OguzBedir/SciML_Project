@@ -7,6 +7,6 @@ WEIGHT_INITIAL: 1.0 # Weight of initial part of loss function
 WEIGHT_BOUNDARY: 1.0 # 5.0e-4  # Weight of boundary part of loss function
 LAYERS: 4
 NEURONS_PER_LAYER: 128
-EPOCHS: 150_000
+EPOCHS: 1 # 150_000
 LEARNING_RATE: 1.0e-4 # 15.0e-5
 VELOCITY: 1.0e-3 #  Wave velocity in m/s
