@@ -58,18 +58,18 @@ def train_model(
             initial_loss_values.append(loss[2].item())
             boundary_loss_values.append(loss[3].item())
 
-            if plot_solution and (epoch + 1) % 10_000 == 0:
+            if plot_solution and (epoch + 1) % 5_000 == 0:
                 # TODO: 
                 # - ADD AN IF STATEMENT FOR SELECTING 2D OR 3D PLOTTING OPTION
                 # - CHANGE STATIC 500 TO SOMETHING THAT CAN BE PASSED AS AN ARGUMENT
-                plot_2D(nn_approximator, x_domain, y_domain, t=0,
+                plot_3D(nn_approximator, x_domain, y_domain, t=0,
                         fname=f"{epoch+1}, t={0}.png", device=compute_device)
-                plot_2D(nn_approximator, x_domain, y_domain, t=0.25,
-                        fname=f"{epoch+1}, t={0.25}.png", device=compute_device)
-                plot_2D(nn_approximator, x_domain, y_domain, t=0.5,
-                        fname=f"{epoch+1}, t={0.5}.png", device=compute_device)
+                plot_3D(nn_approximator, x_domain, y_domain, t=0.1,
+                        fname=f"{epoch+1}, t={0.1}.png", device=compute_device)
+                plot_3D(nn_approximator, x_domain, y_domain, t=0.2,
+                        fname=f"{epoch+1}, t={0.2}.png", device=compute_device)
 
-            if (epoch + 1) % 1000 == 0:
+            if (epoch + 1) % 1_000 == 0:
                 epoch_time = time.time() - start_time
                 start_time = time.time()
 

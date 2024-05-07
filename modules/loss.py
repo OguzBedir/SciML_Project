@@ -7,23 +7,18 @@ from modules.pinn_utils import f, dfdt, dfdx, dfdy
 """
 Quick and dirty solution.
 SHOULD be refactored in the future.
-In your PDE you do NOT need GRAVITY.
 """
 import os
 import yaml
 # Get the current directory
 current_dir = os.path.dirname(__file__)
-
 # Navigate to the parent directory
 parent_dir = os.path.dirname(current_dir)
-
 # Specify the path to your YAML file in the parent directory
 yaml_file_path = os.path.join(parent_dir, "config.yaml")
-
 # Open the YAML file and load its contents
 with open(yaml_file_path, "r") as file:
     yaml_data = yaml.safe_load(file)
-
 # Now you can access elements from the loaded YAML data
 c = yaml_data["VELOCITY"]
 # >>> END <<<

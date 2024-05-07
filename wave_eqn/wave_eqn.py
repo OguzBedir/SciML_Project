@@ -80,12 +80,12 @@ class WaveEqn2D:
                                 + 2 * u[1, 1:nx-1, 1:ny-1] - u[2, 1:nx-1, 1:ny-1]
         
         # Calculate damping coefficient based on current amplitude
-        max_amplitude = np.max(np.abs(u[0]))
-        damping_factor = np.exp(-self.damping_coeff * max_amplitude * self.dt)
+        # max_amplitude = np.max(np.abs(u[0]))
+        # damping_factor = np.exp(-self.damping_coeff * max_amplitude * self.dt)
         # Clip damping factor to be within range [0, 1]
-        damping_factor = np.clip(damping_factor, 0, 1)
+        # damping_factor = np.clip(damping_factor, 0, 1)
         # Apply damping
-        u[0] *= damping_factor
+        # u[0] *= 0.995 # damping_factor
 
         # Apply Neumann boundary conditions
         # Derivative along x-axis at left and right boundaries
